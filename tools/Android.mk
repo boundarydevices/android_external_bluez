@@ -180,3 +180,38 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE:=rfcomm
 
 include $(BUILD_EXECUTABLE)
+
+#
+# bccmd
+#
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES:= \
+	bccmd.c \
+	csr_hci.c \
+	csr.c \
+	csr_bcsp.c \
+	csr_h4.c \
+	csr_3wire.c \
+	ubcsp.c
+
+LOCAL_C_INCLUDES:= \
+	$(call include-path-for, bluez-libs) \
+	$(call include-path-for, bluez-utils)/common/
+
+LOCAL_CFLAGS:= \
+	-DVERSION=\"3.36\" \
+	-D__BSD_VISIBLE=1
+
+LOCAL_SHARED_LIBRARIES := \
+	libbluetooth
+
+LOCAL_STATIC_LIBRARIES := \
+	libbluez-utils-common-static
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
+LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE:=bccmd
+
+include $(BUILD_EXECUTABLE)
