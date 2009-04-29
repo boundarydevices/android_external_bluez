@@ -1,4 +1,8 @@
 /*
+ *  Copyright 2009 Freescale Semiconductor, Inc. All Rights Reserved.
+ */
+
+/*
  *
  *  BlueZ - Bluetooth protocol stack for Linux
  *
