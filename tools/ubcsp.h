@@ -185,6 +185,14 @@ extern void put_uart (uint8);
 
 /*****************************************************************************/
 /**                                                                         **/
+/** put_uart_str outputs a string of octets over the UART Tx line           **/
+/**                                                                         **/
+/*****************************************************************************/
+
+extern void put_uart_str (uint8 *ch, int size);
+
+/*****************************************************************************/
+/**                                                                         **/
 /** get_uart receives a single octet over the UART Rx line                  **/
 /** if no octet is available, then this returns 0                           **/
 /** if an octet was read, then this is returned in the argument and         **/
