@@ -838,13 +838,23 @@ uint8 ubcsp_poll (uint8 *activity)
 	uint8
 		value;
 
+	unsigned char
+		bcsp_sync[10] = {0xc0,0x00,0x41,0x00,0xbe,
+				 0xda,0xdc,0xed,0xed,0xc0};
+
 	/* Assume no activity to start with */
 
 	*activity = 0;
 
 	/* If we don't have to delay, then send something if we can */
 
-	if (!ubcsp_config.delay)
+	if ((ubcsp_config.link_establishment_state == ubcsp_le_uninitialized) &&
+	   (!ubcsp_config.delay))
+	{
+		put_uart_str(bcsp_sync, 10);
+		ubcsp_config.delay = UBCSP_POLL_TIME_DELAY;
+	}
+	else if (!ubcsp_config.delay)
 	{
 		/* Do we have something we are sending to send */
 

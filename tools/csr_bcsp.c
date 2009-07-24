@@ -140,6 +140,15 @@ void put_uart(uint8_t ch)
 		fprintf(stderr, "UART write error\n");
 }
 
+void put_uart_str(uint8_t *ch, int size)
+{
+       int res = write(fd, ch, size);
+
+        if(res != size)
+               fprintf(stderr, "UART write string error\n");
+}
+
+
 uint8_t get_uart(uint8_t *ch)
 {
 	int res = read(fd, ch, 1);
