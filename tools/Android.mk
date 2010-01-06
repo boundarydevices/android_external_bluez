@@ -197,8 +197,9 @@ LOCAL_SRC_FILES:= \
 	ubcsp.c
 
 LOCAL_C_INCLUDES:= \
-	$(call include-path-for, bluez-libs) \
-	$(call include-path-for, bluez-utils)/common/
+	$(LOCAL_PATH)/../include \
+	$(LOCAL_PATH)/../common
+
 
 LOCAL_CFLAGS:= \
 	-DVERSION=\"3.36\" \
@@ -208,7 +209,7 @@ LOCAL_SHARED_LIBRARIES := \
 	libbluetooth
 
 LOCAL_STATIC_LIBRARIES := \
-	libbluez-utils-common-static
+	libbluez-common-static
 
 LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
 LOCAL_MODULE_TAGS := eng
