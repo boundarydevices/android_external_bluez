@@ -23,6 +23,9 @@
 
 #include <termios.h>
 
+#define ATH_DBG(fmt, arg...)  fprintf(stderr, "[ATH_DBG] (%s) <%s>: " fmt "\n" , __FILE__ , __func__ , ## arg)
+#define ATH_INFO(fmt, arg...)  fprintf(stderr, "[ATH_INFO] (%s) <%s>: " fmt "\n" , __FILE__ , __func__ , ## arg)
+
 #ifndef N_HCI
 #define N_HCI	15
 #endif
@@ -50,7 +53,11 @@ int texas_post(int fd, struct termios *ti);
 int texasalt_init(int fd, int speed, struct termios *ti);
 int stlc2500_init(int fd, bdaddr_t *bdaddr);
 int bgb2xx_init(int dd, bdaddr_t *bdaddr);
+
 int ath3k_init(int fd, int speed, int init_speed, char *bdaddr,
 						struct termios *ti);
 int ath3k_post(int fd, int pm);
 int qualcomm_init(int fd, int speed, struct termios *ti, const char *bdaddr);
+
+int ath_ps_download(int fd);
+
