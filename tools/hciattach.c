@@ -51,7 +51,9 @@
 
 #include "hciattach.h"
 
+#ifdef NEED_PPOLL
 #include "ppoll.h"
+#endif
 
 struct uart_t {
 	char *type;
@@ -684,6 +686,173 @@ static int csr(int fd, struct uart_t *u, struct termios *ti)
 }
 
 /*
+ * Atheros AR3xxx specific initialization code with power management disabled.
+ * Suraj Sumangala <Suraj@Atheros.com>
+ */
+static int ar3kpost(int fd, struct uart_t *u, struct termios *ti)
+{
+	int dev_id, dd;
+	struct timespec tm = {0, 50000};
+	int status = 0;
+
+	ATH_INFO("");
+
+	dev_id = ioctl(fd, HCIUARTGETDEVICE, 0);
+	if (dev_id < 0) {
+		perror("cannot get device id");
+		return -1;
+	}
+	ATH_INFO("ioctl(fd, HCIUARTGETDEVICE, 0)");
+
+	dd = hci_open_dev(dev_id);
+	if (dd < 0) {
+		perror("HCI device open failed");
+		return -1;
+	}
+	ATH_INFO("hci_open_dev");
+
+	sleep(2);
+
+	/* send vendor specific command with Sleep feature disabled */
+	hci_send_cmd(dd, OGF_VENDOR_CMD, 0x04, 1, &status);
+	ATH_INFO("Send vendor specific command with Sleep feature disabled");
+
+	nanosleep(&tm, NULL);
+	hci_close_dev(dd);
+
+	return 0;
+
+}
+/*
+ * Atheros AR3xxx specific initialization post callback
+ *  with power management enabled
+ * Suraj Sumangala <Suraj@Atheros.com>
+ */
+static int ar3kpmpost(int fd, struct uart_t *u, struct termios *ti)
+{
+	int dev_id, dd;
+	struct timespec tm = {0, 50000};
+	int status = 1;
+
+	ATH_INFO("");
+
+	dev_id = ioctl(fd, HCIUARTGETDEVICE, 0);
+	if (dev_id < 0) {
+		perror("cannot get device id");
+		return -1;
+	}
+	ATH_INFO("ioctl(fd, HCIUARTGETDEVICE, 0)");
+
+	dd = hci_open_dev(dev_id);
+	if (dd < 0) {
+		perror("HCI device open failed");
+		return -1;
+	}
+	ATH_INFO("hci_open_dev");
+
+	sleep(2);
+
+	/* send vendor specific command with Sleep feature Enabled */
+	if (hci_send_cmd(dd, OGF_VENDOR_CMD, 0x04, 1, &status) < 0)
+		perror("sleep enable command not sent");
+
+	ATH_INFO("Send vendor specific command with Sleep feature Enabled");
+
+	nanosleep(&tm, NULL);
+	hci_close_dev(dd);
+
+	return 0;
+}
+/*
+ * Atheros AR3xxx specific initialization
+ * Suraj Sumangala <Suraj@Atheros.com>
+ */
+static int ar3kinit(int fd, struct uart_t *u, struct termios *ti)
+{
+	struct timespec tm = { 0, 500000 };
+	unsigned char cmd[14], rsp[100];
+	int r;
+	int baud;
+
+	ATH_INFO("");
+
+	/* Download PS and patch */
+	r = ath_ps_download(fd);
+	if (r < 0) {
+		perror("Failed to Download configuration");
+		return -1;
+	}
+	ATH_INFO("Download PS and patch");
+
+	/* Write BDADDR if user has provided any */
+	if (u->bdaddr != NULL) {
+		/* Set BD_ADDR */
+		memset(cmd, 0, sizeof(cmd));
+		memset(rsp, 0, sizeof(rsp));
+		cmd[0] = HCI_COMMAND_PKT;
+		cmd[1] = 0x0B;
+		cmd[2] = 0xfc;
+		cmd[3] = 0x0A;
+		cmd[4] = 0x01;
+		cmd[5] = 0x01;
+		cmd[6] = 0x00;
+		cmd[7] = 0x06;
+		str2ba(u->bdaddr, (bdaddr_t *) (cmd + 8));
+
+		/* Send command */
+		if (write(fd, cmd, 14) != 14) {
+			fprintf(stderr, "Failed to write BD_ADDR command\n");
+			return -1;
+		}
+
+		/* Read reply */
+		if (read_hci_event(fd, rsp, 10) < 0) {
+			fprintf(stderr, "Failed to set BD_ADDR\n");
+			return -1;
+		}
+		ATH_INFO("Write BDADDR");
+	}
+
+	/* Send HCI Reset to write the configuration */
+	cmd[0] = HCI_COMMAND_PKT;
+	cmd[1] = 0x03;
+	cmd[2] = 0x0c;
+	cmd[3] = 0x00;
+	/* Send reset command */
+	r = write(fd, cmd, 4);
+
+	if (r != 4)
+		return -1;
+
+	nanosleep(&tm, NULL);
+	if (read_hci_event(fd, rsp, sizeof(rsp)) < 0)
+		return -1;
+	ATH_INFO("Send HCI Reset");
+
+	/* Set baud rate command,
+	 * set controller baud rate to user specified value */
+	cmd[0] = HCI_COMMAND_PKT;
+	cmd[1] = 0x0C;
+	cmd[2] = 0xfc;
+	cmd[3] = 0x02;
+	baud = u->speed/100;
+	cmd[4] = (char)baud;
+	cmd[5] = (char)(baud >> 8);
+
+	if (write(fd, cmd, 6) != 6) {
+		perror("Failed to write init command");
+		return -1;
+	}
+
+	/* Wait for the command complete event for Baud rate change Command */
+	nanosleep(&tm, NULL);
+	if (read_hci_event(fd, rsp, sizeof(rsp)) < 0)
+		return -1;
+	ATH_INFO("Set baud rate command");
+
+	return 0;
+}
+/*
  * Silicon Wave specific initialization
  * Thomas Moser <thomas.moser@tmoser.ch>
  */
@@ -1137,6 +1306,13 @@ struct uart_t uart[] = {
 	{ "qualcomm",   0x0000, 0x0000, HCI_UART_H4,   115200, 115200,
 			FLOW_CTL, DISABLE_PM, NULL, qualcomm, NULL },
 
+	/* ATHEROS AR300x */
+	{ "ar3kalt",	 0x0000, 0x0000, HCI_UART_ATH,
+	   115200, 115200, FLOW_CTL, NULL, ar3kinit, ar3kpost  },
+
+	{ "ar3k",    0x0000, 0x0000, HCI_UART_ATH,
+	   115200, 115200, FLOW_CTL, NULL, ar3kinit, ar3kpmpost  },
+
 	{ NULL, 0 }
 };
 
@@ -1175,6 +1351,7 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		perror("Can't open serial port");
 		return -1;
 	}
+	ATH_INFO("Serial port is opened");
 
 	tcflush(fd, TCIOFLUSH);
 
@@ -1182,6 +1359,7 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		perror("Can't get port settings");
 		return -1;
 	}
+	ATH_INFO("Port settings is gotten");
 
 	cfmakeraw(&ti);
 
@@ -1195,12 +1373,14 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		perror("Can't set port settings");
 		return -1;
 	}
+	ATH_INFO("Port settings is set");
 
 	/* Set initial baudrate */
 	if (set_speed(fd, &ti, u->init_speed) < 0) {
 		perror("Can't set initial baud rate");
 		return -1;
 	}
+	ATH_INFO("Initial baud rate is set");
 
 	tcflush(fd, TCIOFLUSH);
 
@@ -1208,9 +1388,11 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		tcsendbreak(fd, 0);
 		usleep(500000);
 	}
+	ATH_INFO("Break is sent");
 
 	if (u->init && u->init(fd, u, &ti) < 0)
 		return -1;
+	ATH_INFO("u->init is loaded");
 
 	tcflush(fd, TCIOFLUSH);
 
@@ -1219,6 +1401,7 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		perror("Can't set baud rate");
 		return -1;
 	}
+	ATH_INFO("Actual baud rate is set");
 
 	/* Set TTY to N_HCI line discipline */
 	i = N_HCI;
@@ -1226,6 +1409,7 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		perror("Can't set line discipline");
 		return -1;
 	}
+	ATH_INFO("Line discipline is set");
 
 	if (flags && ioctl(fd, HCIUARTSETFLAGS, flags) < 0) {
 		perror("Can't set UART flags");
@@ -1236,9 +1420,11 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		perror("Can't set device");
 		return -1;
 	}
+	ATH_INFO("Ioctl device is set");
 
 	if (u->post && u->post(fd, u, &ti) < 0)
 		return -1;
+	ATH_INFO("u->post is loaded");
 
 	return fd;
 }
