@@ -136,7 +136,7 @@ LOCAL_SRC_FILES:= \
 	hciattach_qualcomm.c \
 	hciattach_st.c \
 	hciattach_ti.c \
-	hciattach_tialt.c \
+	hciattach_tialt.c
 
 LOCAL_CFLAGS:= \
 	-DVERSION=\"4.93\" \
@@ -146,7 +146,7 @@ LOCAL_CFLAGS:= \
 
 LOCAL_C_INCLUDES:=\
 	$(LOCAL_PATH)/../lib \
-	$(LOCAL_PATH)/../src \
+	$(LOCAL_PATH)/../src
 
 LOCAL_SHARED_LIBRARIES := \
 	libbluetoothd libbluetooth
