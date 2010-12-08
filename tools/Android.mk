@@ -134,10 +134,13 @@ LOCAL_SRC_FILES:= \
 	hciattach.c \
 	hciattach_st.c \
 	hciattach_ti.c \
+	hciattach_ar3k.c \
 	hciattach_tialt.c
 
 LOCAL_CFLAGS:= \
-	-DVERSION=\"4.69\" \
+	-DNEED_PPOLL \
+	-DANDROID_OS \
+	-DVERSION=\"4.47\" \
 	-D__BSD_VISIBLE=1
 
 LOCAL_C_INCLUDES:=\

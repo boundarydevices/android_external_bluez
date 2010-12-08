@@ -23,6 +23,9 @@
 
 #include <termios.h>
 
+#define ATH_DBG(fmt, arg...)  fprintf(stderr, "[ATH_DBG] (%s) <%s>: " fmt "\n" , __FILE__ , __func__ , ## arg)
+#define ATH_INFO(fmt, arg...)  fprintf(stderr, "[ATH_INFO] (%s) <%s>: " fmt "\n" , __FILE__ , __func__ , ## arg)
+
 #ifndef N_HCI
 #define N_HCI	15
 #endif
@@ -38,6 +41,7 @@
 #define HCI_UART_3WIRE	2
 #define HCI_UART_H4DS	3
 #define HCI_UART_LL	4
+#define HCI_UART_ATH    5
 
 #define HCI_UART_RAW_DEVICE	0
 
@@ -49,3 +53,4 @@ int texas_post(int fd, struct termios *ti);
 int texasalt_init(int fd, int speed, struct termios *ti);
 int stlc2500_init(int fd, bdaddr_t *bdaddr);
 int bgb2xx_init(int dd, bdaddr_t *bdaddr);
+int ath_ps_download(int fd);
