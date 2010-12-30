@@ -201,6 +201,7 @@ LOCAL_SRC_FILES:= \
 
 LOCAL_C_INCLUDES:= \
 	$(LOCAL_PATH)/../include \
+	$(LOCAL_PATH)/../lib \
 	$(LOCAL_PATH)/../common
 
 
@@ -210,9 +211,6 @@ LOCAL_CFLAGS:= \
 
 LOCAL_SHARED_LIBRARIES := \
 	libbluetooth
-
-LOCAL_STATIC_LIBRARIES := \
-	libbluez-common-static
 
 LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
 LOCAL_MODULE_TAGS := eng
