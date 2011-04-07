@@ -134,8 +134,9 @@ LOCAL_SRC_FILES:= \
 	hciattach.c \
 	hciattach_st.c \
 	hciattach_ti.c \
-	hciattach_ar3k.c \
-	hciattach_tialt.c
+	hciattach_ath3k.c \
+	hciattach_tialt.c \
+	hciattach_qualcomm.c
 
 LOCAL_CFLAGS:= \
 	-DNEED_PPOLL \

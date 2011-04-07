@@ -46,6 +46,9 @@
 #include "textfile.h"
 #include "oui.h"
 
+/* Unofficial value, might still change */
+#define LE_LINK		0x03
+
 #define for_each_opt(opt, long, short) while ((opt=getopt_long(argc, argv, short ? short:"+", long, NULL)) != -1)
 
 static void usage(void);
@@ -63,6 +66,31 @@ static int dev_info(int s, int dev_id, long arg)
 	return 0;
 }
 
+static void helper_arg(int min_num_arg, int max_num_arg, int *argc,
+			char ***argv, const char *usage)
+{
+	*argc -= optind;
+	/* too many arguments, but when "max_num_arg < min_num_arg" then no
+		 limiting (prefer "max_num_arg=-1" to gen infinity)
+	*/
+	if ( (*argc > max_num_arg) && (max_num_arg >= min_num_arg ) ) {
+		fprintf(stderr, "%s: too many arguments (maximal: %i)\n",
+				*argv[0], max_num_arg);
+		printf("%s", usage);
+		exit(1);
+	}
+
+	/* print usage */
+	if (*argc < min_num_arg) {
+		fprintf(stderr, "%s: too few arguments (minimal: %i)\n",
+				*argv[0], min_num_arg);
+		printf("%s", usage);
+		exit(0);
+	}
+
+	*argv += optind;
+}
+
 static char *type2str(uint8_t type)
 {
 	switch (type) {
@@ -72,6 +100,8 @@ static char *type2str(uint8_t type)
 		return "ACL";
 	case ESCO_LINK:
 		return "eSCO";
+	case LE_LINK:
+		return "LE";
 	default:
 		return "Unknown";
 	}
@@ -105,9 +135,9 @@ static int conn_list(int s, int dev_id, long arg)
 		char *str;
 		ba2str(&ci->bdaddr, addr);
 		str = hci_lmtostr(ci->link_mode);
-		printf("\t%s %s %s handle %d state %d lm %s mtu %d credits %d/%d\n",
+		printf("\t%s %s %s handle %d state %d lm %s\n",
 			ci->out ? "<" : ">", type2str(ci->type),
-			addr, ci->handle, ci->state, str, ci->mtu, ci->cnt, ci->pkts);
+			addr, ci->handle, ci->state, str);
 		bt_free(str);
 	}
 
@@ -167,7 +197,7 @@ static char *get_minor_device_name(int major, int minor)
 	case 0:	/* misc */
 		return "";
 	case 1:	/* computer */
-		switch(minor) {
+		switch (minor) {
 		case 0:
 			return "Uncategorized";
 		case 1:
@@ -185,7 +215,7 @@ static char *get_minor_device_name(int major, int minor)
 		}
 		break;
 	case 2:	/* phone */
-		switch(minor) {
+		switch (minor) {
 		case 0:
 			return "Uncategorized";
 		case 1:
@@ -205,7 +235,7 @@ static char *get_minor_device_name(int major, int minor)
 	case 3:	/* lan access */
 		if (minor == 0)
 			return "Uncategorized";
-		switch(minor / 8) {
+		switch (minor / 8) {
 		case 0:
 			return "Fully available";
 		case 1:
@@ -225,7 +255,7 @@ static char *get_minor_device_name(int major, int minor)
 		}
 		break;
 	case 4:	/* audio/video */
-		switch(minor) {
+		switch (minor) {
 		case 0:
 			return "Uncategorized";
 		case 1:
@@ -267,7 +297,7 @@ static char *get_minor_device_name(int major, int minor)
 	case 5:	/* peripheral */ {
 		static char cls_str[48]; cls_str[0] = 0;
 
-		switch(minor & 48) {
+		switch (minor & 48) {
 		case 16:
 			strncpy(cls_str, "Keyboard", sizeof(cls_str));
 			break;
@@ -278,10 +308,10 @@ static char *get_minor_device_name(int major, int minor)
 			strncpy(cls_str, "Combo keyboard/pointing device", sizeof(cls_str));
 			break;
 		}
-		if((minor & 15) && (strlen(cls_str) > 0))
+		if ((minor & 15) && (strlen(cls_str) > 0))
 			strcat(cls_str, "/");
 
-		switch(minor & 15) {
+		switch (minor & 15) {
 		case 0:
 			break;
 		case 1:
@@ -306,7 +336,7 @@ static char *get_minor_device_name(int major, int minor)
 			strncat(cls_str, "(reserved)", sizeof(cls_str) - strlen(cls_str));
 			break;
 		}
-		if(strlen(cls_str) > 0)
+		if (strlen(cls_str) > 0)
 			return cls_str;
 	}
 	case 6:	/* imaging */
@@ -320,7 +350,7 @@ static char *get_minor_device_name(int major, int minor)
 			return "Printer";
 		break;
 	case 7: /* wearable */
-		switch(minor) {
+		switch (minor) {
 		case 1:
 			return "Wrist Watch";
 		case 2:
@@ -334,7 +364,7 @@ static char *get_minor_device_name(int major, int minor)
 		}
 		break;
 	case 8: /* toy */
-		switch(minor) {
+		switch (minor) {
 		case 1:
 			return "Robot";
 		case 2:
@@ -391,6 +421,7 @@ static void cmd_dev(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
+	helper_arg(0, 0, &argc, &argv, dev_help);
 
 	printf("Devices:\n");
 
@@ -461,6 +492,7 @@ static void cmd_inq(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
+	helper_arg(0, 0, &argc, &argv, inq_help);
 
 	printf("Inquiring ...\n");
 
@@ -576,6 +608,7 @@ static void cmd_scan(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
+	helper_arg(0, 0, &argc, &argv, scan_help);
 
 	if (dev_id < 0) {
 		dev_id = hci_get_route(NULL);
@@ -785,13 +818,7 @@ static void cmd_name(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", name_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, name_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -844,13 +871,7 @@ static void cmd_info(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", info_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, info_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -986,6 +1007,7 @@ static void cmd_spinq(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
+	helper_arg(0, 0, &argc, &argv, spinq_help);
 
 	if (dev_id < 0)
 		dev_id = hci_get_route(NULL);
@@ -1026,7 +1048,7 @@ static struct option epinq_options[] = {
 
 static const char *epinq_help =
 	"Usage:\n"
-	"\tspinq\n";
+	"\tepinq\n";
 
 static void cmd_epinq(int dev_id, int argc, char **argv)
 {
@@ -1039,6 +1061,7 @@ static void cmd_epinq(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
+	helper_arg(0, 0, &argc, &argv, epinq_help);
 
 	if (dev_id < 0)
 		dev_id = hci_get_route(NULL);
@@ -1087,13 +1110,7 @@ static void cmd_cmd(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 2) {
-		printf("%s", cmd_help);
-		return;
-	}
+	helper_arg(2, -1, &argc, &argv, cmd_help);
 
 	if (dev_id < 0)
 		dev_id = hci_get_route(NULL);
@@ -1170,6 +1187,7 @@ static void cmd_con(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
+	helper_arg(0, 0, &argc, &argv, con_help);
 
 	printf("Connections:\n");
 
@@ -1218,13 +1236,7 @@ static void cmd_cc(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", cc_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, cc_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -1274,13 +1286,7 @@ static void cmd_dc(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", dc_help);
-		return;
-	}
+	helper_arg(1, 2, &argc, &argv, dc_help);
 
 	str2ba(argv[0], &bdaddr);
 	reason = (argc > 1) ? atoi(argv[1]) : HCI_OE_USER_ENDED_CONNECTION;
@@ -1345,13 +1351,7 @@ static void cmd_sr(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 2) {
-		printf("%s", sr_help);
-		return;
-	}
+	helper_arg(2, 2, &argc, &argv, sr_help);
 
 	str2ba(argv[0], &bdaddr);
 	switch (argv[1][0]) {
@@ -1413,13 +1413,7 @@ static void cmd_rssi(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", rssi_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, rssi_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -1487,13 +1481,7 @@ static void cmd_lq(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", lq_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, lq_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -1562,13 +1550,7 @@ static void cmd_tpl(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", tpl_help);
-		return;
-	}
+	helper_arg(1, 2, &argc, &argv, tpl_help);
 
 	str2ba(argv[0], &bdaddr);
 	type = (argc > 1) ? atoi(argv[1]) : 0;
@@ -1639,13 +1621,7 @@ static void cmd_afh(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", afh_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, afh_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -1725,13 +1701,7 @@ static void cmd_cpt(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 2) {
-		printf("%s", cpt_help);
-		return;
-	}
+	helper_arg(2, 2, &argc, &argv, cpt_help);
 
 	str2ba(argv[0], &bdaddr);
 	hci_strtoptype(argv[1], &ptype);
@@ -1810,13 +1780,7 @@ static void cmd_lp(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", lp_help);
-		return;
-	}
+	helper_arg(1, 2, &argc, &argv, lp_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -1909,13 +1873,7 @@ static void cmd_lst(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", lst_help);
-		return;
-	}
+	helper_arg(1, 2, &argc, &argv, lst_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -1999,13 +1957,7 @@ static void cmd_auth(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", auth_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, auth_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -2071,13 +2023,7 @@ static void cmd_enc(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", enc_help);
-		return;
-	}
+	helper_arg(1, 2, &argc, &argv, enc_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -2144,13 +2090,7 @@ static void cmd_key(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", key_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, key_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -2216,13 +2156,7 @@ static void cmd_clkoff(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", clkoff_help);
-		return;
-	}
+	helper_arg(1, 1, &argc, &argv, clkoff_help);
 
 	str2ba(argv[0], &bdaddr);
 
@@ -2292,8 +2226,7 @@ static void cmd_clock(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
-	argc -= optind;
-	argv += optind;
+	helper_arg(0, 2, &argc, &argv, clock_help);
 
 	if (argc > 0)
 		str2ba(argv[0], &bdaddr);
@@ -2416,24 +2349,39 @@ done:
 
 static struct option lescan_options[] = {
 	{ "help",	0, 0, 'h' },
+	{ "privacy",	0, 0, 'p' },
+	{ "passive",	0, 0, 'P' },
 	{ 0, 0, 0, 0 }
 };
 
 static const char *lescan_help =
 	"Usage:\n"
-	"\tlescan\n";
+	"\tlescan [--privacy] enable privacy\n"
+	"\tlescan [--passive] set scan type passive (default active)\n";
 
 static void cmd_lescan(int dev_id, int argc, char **argv)
 {
 	int err, opt, dd;
+	uint8_t own_type = 0x00;
+	uint8_t scan_type = 0x01;
 
 	for_each_opt(opt, lescan_options, NULL) {
 		switch (opt) {
+		case 'p':
+			own_type = 0x01; /* Random */
+			break;
+		case 'P':
+			scan_type = 0x00; /* Passive */
+			break;
 		default:
 			printf("%s", lescan_help);
 			return;
 		}
 	}
+	helper_arg(0, 1, &argc, &argv, lescan_help);
+
+	if (dev_id < 0)
+		dev_id = hci_get_route(NULL);
 
 	dd = hci_open_dev(dev_id);
 	if (dd < 0) {
@@ -2441,8 +2389,8 @@ static void cmd_lescan(int dev_id, int argc, char **argv)
 		exit(1);
 	}
 
-	err = hci_le_set_scan_parameters(dd, 0x01, htobs(0x0010), htobs(0x0010),
-								0x00, 0x00);
+	err = hci_le_set_scan_parameters(dd, scan_type, htobs(0x0010),
+					htobs(0x0010), own_type, 0x00);
 	if (err < 0) {
 		perror("Set scan parameters failed");
 		exit(1);
@@ -2473,12 +2421,13 @@ static void cmd_lescan(int dev_id, int argc, char **argv)
 
 static struct option lecc_options[] = {
 	{ "help",	0, 0, 'h' },
+	{ "random",	0, 0, 'r' },
 	{ 0, 0, 0, 0 }
 };
 
 static const char *lecc_help =
 	"Usage:\n"
-	"\tlecc <bdaddr>\n";
+	"\tlecc [--random] <bdaddr>\n";
 
 static void cmd_lecc(int dev_id, int argc, char **argv)
 {
@@ -2488,21 +2437,22 @@ static void cmd_lecc(int dev_id, int argc, char **argv)
 	uint16_t min_interval, supervision_timeout, window, handle;
 	uint8_t initiator_filter, own_bdaddr_type, peer_bdaddr_type;
 
+	peer_bdaddr_type = 0x00; /* Public device address */
+
 	for_each_opt(opt, lecc_options, NULL) {
 		switch (opt) {
+		case 'r':
+			peer_bdaddr_type = 0x01; /* Random */
+			break;
 		default:
 			printf("%s", lecc_help);
 			return;
 		}
 	}
+	helper_arg(1, 1, &argc, &argv, lecc_help);
 
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", lecc_help);
-		return;
-	}
+	if (dev_id < 0)
+		dev_id = hci_get_route(NULL);
 
 	dd = hci_open_dev(dev_id);
 	if (dd < 0) {
@@ -2515,7 +2465,6 @@ static void cmd_lecc(int dev_id, int argc, char **argv)
 	interval = htobs(0x0004);
 	window = htobs(0x0004);
 	initiator_filter = 0x00;
-	peer_bdaddr_type = 0x00;
 	own_bdaddr_type = 0x00;
 	min_interval = htobs(0x000F);
 	max_interval = htobs(0x000F);
@@ -2560,14 +2509,10 @@ static void cmd_ledc(int dev_id, int argc, char **argv)
 			return;
 		}
 	}
+	helper_arg(1, 2, &argc, &argv, ledc_help);
 
-	argc -= optind;
-	argv += optind;
-
-	if (argc < 1) {
-		printf("%s", ledc_help);
-		return;
-	}
+	if (dev_id < 0)
+		dev_id = hci_get_route(NULL);
 
 	dd = hci_open_dev(dev_id);
 	if (dd < 0) {
@@ -2685,10 +2630,18 @@ int main(int argc, char *argv[])
 	}
 
 	for (i = 0; command[i].cmd; i++) {
-		if (strncmp(command[i].cmd, argv[0], 3))
+		if (strncmp(command[i].cmd,
+				argv[0], strlen(command[i].cmd)))
 			continue;
+
 		command[i].func(dev_id, argc, argv);
 		break;
 	}
+
+	if (command[i].cmd == 0) {
+		fprintf(stderr, "Unknown command - \"%s\"\n", *argv);
+		exit(1);
+	}
+
 	return 0;
 }
