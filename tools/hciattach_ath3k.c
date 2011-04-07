@@ -42,7 +42,11 @@
 #define TRUE    1
 #define FALSE   0
 
-#define FW_PATH "/lib/firmware/ar3k/"
+#ifdef ANDROID_OS
+#define FW_PATH                         "/system/lib/firmware/ar3k/"
+#else
+#define FW_PATH                         "/lib/firmware/ar3k/"
+#endif
 
 struct ps_cfg_entry {
 	uint32_t id;
@@ -148,8 +152,8 @@ static int write_cmd(int fd, uint8_t *buffer, int len)
 		return err;
 
 	err = read_ps_event(event, HCI_PS_CMD_OCF);
-
-	free(event);
+	if (event)
+		free(event);
 
 	return err;
 }
@@ -493,7 +497,8 @@ static int set_patch_ram(int dev, char *patch_loc, int len)
 
 	err = read_ps_event(event, HCI_PS_CMD_OCF);
 
-	free(event);
+	if (event)
+		free(event);
 
 	return err;
 }
@@ -622,7 +627,8 @@ static int get_ath3k_crc(int dev)
 	if (read_ps_event(event, HCI_PS_CMD_OCF) >= 0)
 		err = -EILSEQ;
 
-	free(event);
+	if (!event)
+		free(event);
 
 	return err;
 }
@@ -665,7 +671,8 @@ static int get_device_type(int dev, uint32_t *code)
 	*code = reg;
 
 cleanup:
-	free(event);
+	if (event)
+		free(event);
 
 	return err;
 }
@@ -706,7 +713,8 @@ static int read_ath3k_version(int pConfig, uint32_t *rom_version,
 	*build_version = status;
 
 cleanup:
-	free(event);
+	if (event)
+		free(event);
 
 	return err;
 }
@@ -764,7 +772,8 @@ static int write_bdaddr(int pConfig, char *bdaddr)
 
 	err = read_ps_event(event, HCI_PS_CMD_OCF);
 
-	free(event);
+	if (event)
+		free(event);
 
 	return err;
 }

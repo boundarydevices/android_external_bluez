@@ -1306,13 +1306,6 @@ struct uart_t uart[] = {
 	{ "qualcomm",   0x0000, 0x0000, HCI_UART_H4,   115200, 115200,
 			FLOW_CTL, DISABLE_PM, NULL, qualcomm, NULL },
 
-	/* ATHEROS AR300x */
-	{ "ar3kalt",	 0x0000, 0x0000, HCI_UART_ATH,
-	   115200, 115200, FLOW_CTL, NULL, ar3kinit, ar3kpost  },
-
-	{ "ar3k",    0x0000, 0x0000, HCI_UART_ATH,
-	   115200, 115200, FLOW_CTL, NULL, ar3kinit, ar3kpmpost  },
-
 	{ NULL, 0 }
 };
 

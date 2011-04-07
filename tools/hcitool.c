@@ -53,6 +53,7 @@
 #define FLAGS_LIMITED_MODE_BIT 0x01
 #define FLAGS_GENERAL_MODE_BIT 0x02
 
+
 #define for_each_opt(opt, long, short) while ((opt=getopt_long(argc, argv, short ? short:"+", long, NULL)) != -1)
 
 static void usage(void);
@@ -139,9 +140,9 @@ static int conn_list(int s, int dev_id, long arg)
 		char *str;
 		ba2str(&ci->bdaddr, addr);
 		str = hci_lmtostr(ci->link_mode);
-		printf("\t%s %s %s handle %d state %d lm %s mtu %d credits %d/%d\n",
+		printf("\t%s %s %s handle %d state %d lm %s\n",
 			ci->out ? "<" : ">", type2str(ci->type),
-			addr, ci->handle, ci->state, str, ci->mtu, ci->cnt, ci->pkts);
+			addr, ci->handle, ci->state, str);
 		bt_free(str);
 	}
 
