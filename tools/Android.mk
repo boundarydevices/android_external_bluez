@@ -142,6 +142,7 @@ LOCAL_CFLAGS:= \
 	-DVERSION=\"4.93\" \
 	-D__BSD_VISIBLE=1 \
 	-DCONFIGDIR=\"/etc/bluetooth\" \
+	-DANDROID_OS \
         -DNEED_PPOLL
 
 LOCAL_C_INCLUDES:=\
