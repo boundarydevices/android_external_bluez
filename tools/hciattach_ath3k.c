@@ -627,7 +627,7 @@ static int get_ath3k_crc(int dev)
 	if (read_ps_event(event, HCI_PS_CMD_OCF) >= 0)
 		err = -EILSEQ;
 
-	if (!event)
+	if (event)
 		free(event);
 
 	return err;

@@ -3046,7 +3046,7 @@ void btd_adapter_unref(struct btd_adapter *adapter)
 
 	DBG("%p: ref=%d", adapter, adapter->ref);
 
-	if (adapter->ref != 0)
+	if (adapter->ref > 0)
 		return;
 
 	path = g_strdup(adapter->path);
