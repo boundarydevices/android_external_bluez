@@ -57,7 +57,7 @@
 
 #define TI_MANUFACTURER_ID	13
 
-#define FIRMWARE_DIRECTORY	"/lib/firmware/"
+#define FIRMWARE_DIRECTORY	"/system/etc/firmware/"
 
 #define ACTION_SEND_COMMAND	1
 #define ACTION_WAIT_EVENT	2
