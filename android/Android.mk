@@ -695,6 +695,7 @@ LOCAL_SRC_FILES := \
 	bluez/tools/hciattach_ti.c \
 	bluez/tools/hciattach_tialt.c \
 	bluez/tools/hciattach_ath3k.c \
+	bluez/tools/hciattach_rome.c \
 	bluez/tools/hciattach_qualcomm.c \
 	bluez/tools/hciattach_intel.c \
 	bluez/tools/hciattach_bcm43xx.c \
