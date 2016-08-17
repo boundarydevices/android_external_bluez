@@ -317,6 +317,11 @@ static int ath3k_pm(int fd, struct uart_t *u, struct termios *ti)
 	return ath3k_post(fd, u->pm);
 }
 
+static int qca(int fd, struct uart_t *u, struct termios *ti)
+{
+	return qca_soc_init(fd, u->speed, u->bdaddr);
+}
+
 static int qualcomm(int fd, struct uart_t *u, struct termios *ti)
 {
 	return qualcomm_init(fd, u->speed, ti, u->bdaddr);
@@ -1147,6 +1152,10 @@ struct uart_t uart[] = {
 	{ "ath3k",    0x0000, 0x0000, HCI_UART_ATH3K, 115200, 115200,
 			FLOW_CTL, DISABLE_PM, NULL, ath3k_ps, ath3k_pm  },
 
+	/* QCA ROME */
+	{ "qca",    0x0000, 0x0000, HCI_UART_H4, 115200, 115200,
+			FLOW_CTL, DISABLE_PM, NULL, qca, NULL },
+
 	/* QUALCOMM BTS */
 	{ "qualcomm",   0x0000, 0x0000, HCI_UART_H4,   115200, 115200,
 			FLOW_CTL, DISABLE_PM, NULL, qualcomm, NULL },
@@ -1198,6 +1207,9 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 
 	if (u->flags & AMP_DEV)
 		flags |= 1 << HCI_UART_CREATE_AMP;
+
+	if (!strncmp(u->type, "qca", 3))
+		flags |= 1 << HCI_UART_RESET_ON_INIT;
 
 	fd = open(dev, O_RDWR | O_NOCTTY);
 	if (fd < 0) {

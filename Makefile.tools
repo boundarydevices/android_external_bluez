@@ -161,6 +161,7 @@ tools_hciattach_SOURCES = tools/hciattach.c tools/hciattach.h \
 						tools/hciattach_ti.c \
 						tools/hciattach_tialt.c \
 						tools/hciattach_ath3k.c \
+						tools/hciattach_rome.c \
 						tools/hciattach_qualcomm.c \
 						tools/hciattach_intel.c \
 						tools/hciattach_bcm43xx.c
