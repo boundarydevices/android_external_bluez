@@ -89,27 +89,6 @@ typedef struct
 #define USERIAL_BAUD_4M         15
 #define USERIAL_BAUD_AUTO       16
 
-/* Vendor specific baud rate values */
-#define UART_Baud_Rate_Baud_9600        4
-#define UART_Baud_Rate_Baud_19200       3
-#define UART_Baud_Rate_Baud_57600       1
-#define UART_Baud_Rate_Baud_115200      0
-#define UART_Baud_Rate_Baud_230400      5
-#define UART_Baud_Rate_Baud_460800      7
-#define UART_Baud_Rate_Baud_921600      10
-#define UART_Baud_Rate_Baud_1000000     11
-#define UART_Baud_Rate_Baud_2000000     13
-#define UART_Baud_Rate_Baud_3000000     14
-#define UART_Baud_Rate_Baud_4000000     15
-
-#define UART_Baud_Rate_Baud_250000      6
-#define UART_Baud_Rate_Baud_500000      8
-#define UART_Baud_Rate_Baud_720000      9
-#define UART_Baud_Rate_Baud_125000      12
-#define UART_Baud_Rate_Baud_1600000     16
-#define UART_Baud_Rate_Baud_3200000     17
-#define UART_Baud_Rate_Baud_3500000     18
-
 #ifndef FALSE
 #define FALSE  0
 #endif
