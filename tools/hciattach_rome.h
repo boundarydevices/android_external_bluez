@@ -201,11 +201,12 @@ typedef struct
 #define FWCONF_PCM_MASTER           0
 #define FWCONF_PCM_ROLE_BIT_OFFSET  4
 
-/* FW IBS Configuration */
+/* FW HCI Transport Layer Configuration */
 #define FWCONF_IBS_DISABLE          (0)
 #define FWCONF_IBS_ENABLE           (1)
 #define FWCONF_IBS_VAL_BIT          (7)
 #define FWCONF_IBS_VAL_OFFSET       (0)
+#define FWCONF_BAUD_VAL_OFFSET      (2)
 
 /* FW DEEP SLEEP Configuration */
 #define FWCONF_DEEP_SLEEP_DISABLE       0
