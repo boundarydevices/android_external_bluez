@@ -48,6 +48,7 @@
 #define USERIAL_OP_CLK_OFF     0x5442
 #endif
 
+#define PR_INFO(fmt, arg...) printf(fmt, ## arg)
 #ifdef DEBUG
     #define PR_DBG(fmt, arg...) printf(fmt, ## arg)
 #else
