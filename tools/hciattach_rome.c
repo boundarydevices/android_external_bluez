@@ -1832,6 +1832,14 @@ download:
 			goto error;
 		}
 
+		/* Changing the default baud rate value to speed up transfers */
+		err = rome_set_baudrate_req(fd, baud_rate);
+		if (err < 0) {
+			fprintf(stderr, "%s: Baud rate change failed!\n", __FUNCTION__);
+			ret = -1;
+			goto error;
+		}
+
 		/* Donwload TLV files (rampatch, NVM) */
 		err = rome_download_tlv_file(fd, baud_rate);
 		if (err < 0) {
